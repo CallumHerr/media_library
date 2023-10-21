@@ -1,5 +1,6 @@
 package application;
 
+import application.listeners.ButtonHandler;
 import util.FileManager;
 import util.MediaItem;
 
@@ -51,6 +52,9 @@ public class MediaDashboard extends JFrame {
         toolbar.setFloatable(false);
 
         this.populateTable("none");
+
+        ButtonHandler handler = new ButtonHandler(this, fileMan);
+        this.addBtn.addActionListener(handler);
 
         this.setContentPane(mainPanel);
         this.setTitle("Media library organiser");
