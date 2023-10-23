@@ -9,6 +9,8 @@ public class FileManager {
     private File file; //File that the media library is currently saving to
     private final List<MediaItem> media; //All media currently being managed
     private final Map<String, List<MediaItem>> playlists; //All playlists being managed
+    private final List<String> validFileTypes; //List of supported file types
+    private boolean changesMade;
 
     /**
      * Gets the last opened file from the Java Preferences API and checks if it still exists
@@ -16,8 +18,18 @@ public class FileManager {
      * preference.
      */
     public FileManager() {
+        //Initialise the class properties
         this.media = new ArrayList<>();
         this.playlists = new HashMap<>();
+        this.validFileTypes = new ArrayList<>();
+        this.changesMade = false;
+
+        //Add all the currently supported file types to the list
+        validFileTypes.add("mp3");
+        validFileTypes.add("mp4");
+        validFileTypes.add("png");
+        validFileTypes.add("jpg");
+        validFileTypes.add("jpeg");
 
         //Checks the preferences saved for this class and gets the fileDir saved
         Preferences prefs = Preferences.userRoot().node(this.getClass().getName());
@@ -36,28 +48,34 @@ public class FileManager {
         if (!success) prefs.remove("libraryDir");
     }
 
+
     /**
      * Reads from the media library file to set collect all media and playlists being managed
      * @param file the file containing the media library information
      * @return true if file was read successfully, false otherwise
      */
     public boolean setFile(File file) {
-        this.file = file;
-
         try {
+            //If file doesn't exist then new file is being made and there is nothing to read from
+            if (!file.exists()) file.createNewFile(); //If file doesn't exist it needs to be created
+
             Scanner reader = new Scanner(file);
+            //If this heading isn't in the file then it's not a valid media library file
+            if (!reader.nextLine().equals("[MediaLibraryOrganiserFile]")) return false;
+
+            //Clear the media list and playlists of the previously loaded media file
+            media.clear();
+            playlists.clear();
             while (reader.hasNextLine()) {
                 //Each line contains info for a new piece of media
                 //stored as fileDir, playlist1, playlist2...
                 String[] mediaInfo = reader.nextLine().split(",");
                 String fDir = mediaInfo[0];
 
-                //If it is not one of the following file types then it is not supported
-                if (!fDir.endsWith(".jpg")
-                        && !fDir.endsWith(".png")
-                        && !fDir.endsWith(".mp4")
-                        && !fDir.endsWith(".mp3")) continue;
+                //if it is not a supported file type then move onto the next file
+                if (!this.isValidFile(fDir)) continue;
 
+                //Create the media item and add it to the media list
                 MediaItem media = new MediaItem(mediaInfo);
                 this.media.add(media);
                 //if entry is more than 1 element it is in playlists too
@@ -71,8 +89,13 @@ public class FileManager {
             //Set the preference to the most recently opened file
             Preferences prefs = Preferences.userRoot().node(this.getClass().getName());
             prefs.put("libraryDir", file.getAbsolutePath());
+
+            //Set the currently managed file to the one just read from and return true to show success
+            this.file = file;
+            this.changesMade = false;
             return true;
         } catch (Exception e) {
+            //Something went wrong so return false so error can be displayed
             return false;
         }
 
@@ -83,6 +106,7 @@ public class FileManager {
      * @param dir Directory of the new media file to manage
      */
     public void addMedia(String dir) {
+        this.changesMade = true;
         MediaItem newItem = new MediaItem(new String[]{dir});
         this.media.add(newItem);
     }
@@ -92,6 +116,7 @@ public class FileManager {
      * @param index index of the media item to be removed
      */
     public void delMedia(int index) {
+        this.changesMade = true;
         this.media.remove(index);
     }
 
@@ -100,17 +125,20 @@ public class FileManager {
      * @return true if file was written to successfully, false otherwise
      */
     public boolean save() {
-        StringBuilder builder = new StringBuilder();
+        //Using builder since string will continue to get more strings added on
+        StringBuilder builder = new StringBuilder("[MediaLibraryOrganiserFile]\n");
         for (MediaItem item : this.media) {
+            //For each media item add it using the toString custom method then make a new line for the next item
             builder.append(item.toString());
             builder.append("\n");
         }
 
         try {
+            //Attempt to write the current media library to the library file
             FileWriter writer = new FileWriter(this.file);
             writer.write(builder.toString());
             writer.close();
-            return true;
+            return true; //If success return true other return false so error can be handled
         } catch (Exception e) {
             return false;
         }
@@ -122,6 +150,7 @@ public class FileManager {
      * @param media List of MediaItem that the playlist contains
      */
     public void addPlaylist(String name, List<MediaItem> media) {
+        this.changesMade = true;
         this.playlists.put(name, media);
     }
 
@@ -130,6 +159,7 @@ public class FileManager {
      * @param name Playlist name to remove
      */
     public void removePlaylist(String name) {
+        this.changesMade = true;
         this.playlists.remove(name);
     }
 
@@ -150,4 +180,31 @@ public class FileManager {
         return this.media;
     }
 
+    /**
+     * Checks if a file is opened in the library manager
+     * @return true if there is currently a file, false otherwise
+     */
+    public boolean hasFile() {
+        return file != null;
+    }
+
+    /**
+     * checks if the given dir is a supported file type
+     * @param dir the file to check type of
+     * @return true if the file type is supported, false otherwise
+     */
+    public boolean isValidFile(String dir) {
+        //Get the file extension first
+        String fileType = dir.substring(dir.length() - 3).toLowerCase();
+        //check if its a valid type
+        return validFileTypes.contains(fileType);
+    }
+
+    /**
+     * Checks if changes have been made since last opening the library
+     * @return true if changes have been made, false otherwise
+     */
+    public boolean changesMade() {
+        return this.changesMade;
+    }
 }

@@ -41,7 +41,9 @@ public class MediaItem {
         }
 
         //File.length() gives size in bytes, adjusting to store size in MB
-        this.size = file.length() / 1000000f;
+        float rawSize = file.length() / 1000000f;
+        //Rounding the value to get the size to 2 decimal places for readability
+        this.size = Math.round(rawSize * 100f) / 100f;
 
         //Setting resolution if able to obtain that information otherwise blank string
         String res;
@@ -86,5 +88,13 @@ public class MediaItem {
     public String toString() {
         return fileDir + "," +
                 String.join(",", playlists);
+    }
+
+    /**
+     * Gets the file path of the media item
+     * @return the media items file location
+     */
+    public String getPath() {
+        return this.fileDir;
     }
 }
