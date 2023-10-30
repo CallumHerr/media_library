@@ -1,7 +1,9 @@
 package application.listeners;
 
 import application.MediaDashboard;
+import application.PlaylistEditor;
 import util.FileManager;
+import util.MediaItem;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -9,14 +11,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileWriter;
+import java.util.List;
 
 public class MenuHandler implements ActionListener {
     private final MediaDashboard dashboard;
-    private final FileManager fileMan;
+    private final PlaylistEditor playlistEditor;
 
-    public MenuHandler(MediaDashboard dashboard, FileManager manager) {
+    public MenuHandler(MediaDashboard dashboard) {
         this.dashboard = dashboard;
-        this.fileMan = manager;
+        this.playlistEditor = new PlaylistEditor(dashboard);
     }
 
     @Override
@@ -26,10 +29,12 @@ public class MenuHandler implements ActionListener {
         switch (menuItem.getText()) {
             case "Open library" -> openFile();
             case "New library" -> newFile();
+            default -> openPlaylist(menuItem.getText());
         }
     }
 
     private void openFile() {
+        FileManager fileMan = dashboard.getFileMan();
         if (fileMan.hasFile() && fileMan.changesMade()) {
             int choice = JOptionPane.showOptionDialog(dashboard.getFrame(),
                     "Would you like to save any changes to the current file?",
@@ -70,6 +75,7 @@ public class MenuHandler implements ActionListener {
     }
 
     private void newFile() {
+        FileManager fileMan = dashboard.getFileMan();
         if (fileMan.hasFile() && fileMan.changesMade()) {
             int choice = JOptionPane.showOptionDialog(dashboard.getFrame(),
                     "Would you like to save any changes to the current file?",
@@ -118,7 +124,7 @@ public class MenuHandler implements ActionListener {
                                 "Save failed", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                };
+                }
             }
         }
 
@@ -129,5 +135,17 @@ public class MenuHandler implements ActionListener {
                     "Sorry, something went wrong creating the library.",
                     "Creation failed", JOptionPane.ERROR_MESSAGE);
         } else dashboard.populateTable();
+    }
+
+    public void openPlaylist(String playlistName) {
+        List<MediaItem> playlist = dashboard.getFileMan().getPlaylist(playlistName);
+        if (playlist == null) {
+            JOptionPane.showMessageDialog(dashboard.getFrame(),
+                    "Sorry, that playlist doesn't exist.",
+                    "Playlist error", JOptionPane.ERROR_MESSAGE);
+            dashboard.genPlaylists();
+            return;
+        }
+        dashboard.populateTable(playlistName);
     }
 }

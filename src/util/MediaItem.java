@@ -97,4 +97,8 @@ public class MediaItem {
     public String getPath() {
         return this.fileDir;
     }
+
+    public java.lang.String getName() {
+        return name;
+    }
 }

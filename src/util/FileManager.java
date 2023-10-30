@@ -21,6 +21,7 @@ public class FileManager {
         //Initialise the class properties
         this.media = new ArrayList<>();
         this.playlists = new HashMap<>();
+        this.playlists.put("Banana", new ArrayList<>());
         this.validFileTypes = new ArrayList<>();
         this.changesMade = false;
 
@@ -206,5 +207,9 @@ public class FileManager {
      */
     public boolean changesMade() {
         return this.changesMade;
+    }
+
+    public String[] getPlaylistNames() {
+        return this.playlists.keySet().toArray(new String[0]);
     }
 }

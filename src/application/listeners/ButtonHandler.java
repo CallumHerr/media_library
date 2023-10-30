@@ -14,16 +14,13 @@ import java.util.List;
 
 public class ButtonHandler implements ActionListener {
     private final MediaDashboard dashboard; //The dashboard attached to the listener
-    private final FileManager fileMan; //The file manager for current library
 
     /**
      * Save the dashboard and file manager for easy use on button presses
      * @param dashboard the MediaDashboard currently open
-     * @param manager the FileManager currently in use
      */
-    public ButtonHandler(MediaDashboard dashboard, FileManager manager) {
+    public ButtonHandler(MediaDashboard dashboard) {
         this.dashboard = dashboard;
-        this.fileMan = manager;
     }
 
     /**
@@ -33,7 +30,7 @@ public class ButtonHandler implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         //if the file manager has no file saved then don't allow button presses
-        if (!fileMan.hasFile()) {
+        if (!dashboard.getFileMan().hasFile()) {
             JOptionPane.showMessageDialog(dashboard.getFrame(),
                     "You need to open a library file first from the file dropdown.",
                     "No library open", JOptionPane.ERROR_MESSAGE);
@@ -59,7 +56,7 @@ public class ButtonHandler implements ActionListener {
         //Creates the file selection menu
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogType(JFileChooser.OPEN_DIALOG);
-        //By default will only show the selectable files
+        //By default, will only show the selectable files
         fileChooser.setFileFilter(new FileNameExtensionFilter("Media Files",
                 "jpg",
                 "png",
@@ -72,6 +69,8 @@ public class ButtonHandler implements ActionListener {
         int choice = fileChooser.showOpenDialog(dashboard.getFrame());
         if (choice == JFileChooser.CANCEL_OPTION) return;
 
+        FileManager fileMan = dashboard.getFileMan();
+
         //If invalid file type then display error message and don't attempt to add media
         String dir = fileChooser.getSelectedFile().getAbsolutePath();
         if (fileMan.isValidFile(dir)) {
@@ -82,7 +81,7 @@ public class ButtonHandler implements ActionListener {
         }
 
         //Add the selected media to the file manager and update the media library table
-        this.fileMan.addMedia(dir);
+        fileMan.addMedia(dir);
         this.dashboard.populateTable();
     }
 
@@ -95,6 +94,7 @@ public class ButtonHandler implements ActionListener {
             return;
         }
 
+        FileManager fileMan = dashboard.getFileMan();
         MediaItem mediaItem;
         String currentPlaylist = dashboard.getCurrentPlaylist();
         if (currentPlaylist.equals("none")) {
@@ -109,8 +109,7 @@ public class ButtonHandler implements ActionListener {
 
         for (String playlistName : mediaItem.getPlaylists()) {
             List<MediaItem> playlist = fileMan.getPlaylist(playlistName);
-            int playlistIndex = playlist.indexOf(mediaItem);
-            playlist.remove(playlistIndex);
+            playlist.remove(mediaItem);
         }
 
         dashboard.populateTable(currentPlaylist);
@@ -123,13 +122,18 @@ public class ButtonHandler implements ActionListener {
         int choice = fileChooser.showOpenDialog(dashboard.getFrame());
         if (choice != JFileChooser.APPROVE_OPTION) return;
 
+        FileManager fileMan = dashboard.getFileMan();
         File dir = fileChooser.getSelectedFile();
         int newFiles = 0;
-        for (String fileName : dir.list()) {
-            if (!fileMan.isValidFile(fileName)) continue;
 
-            newFiles++;
-            fileMan.addMedia(dir.getAbsolutePath() + "/" + fileName);
+        String[] dirList = dir.list();
+        if (dirList != null) {
+            for (String fileName : dir.list()) {
+                if (!fileMan.isValidFile(fileName)) continue;
+
+                newFiles++;
+                fileMan.addMedia(dir.getAbsolutePath() + "/" + fileName);
+            }
         }
 
         JOptionPane.showMessageDialog(dashboard.getFrame(),
@@ -148,6 +152,7 @@ public class ButtonHandler implements ActionListener {
         }
 
         String currentPlaylist = dashboard.getCurrentPlaylist();
+        FileManager fileMan = dashboard.getFileMan();
         String path;
         if (currentPlaylist.equals("none")) path = fileMan.getMedia().get(rowIndex).getPath();
         else path = fileMan.getPlaylist(currentPlaylist).get(rowIndex).getPath();
