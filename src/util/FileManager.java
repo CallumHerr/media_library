@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.*;
 import java.util.prefs.Preferences;
+import java.util.stream.Collectors;
 
 public class FileManager {
     private File file; //File that the media library is currently saving to
@@ -21,7 +22,6 @@ public class FileManager {
         //Initialise the class properties
         this.media = new ArrayList<>();
         this.playlists = new HashMap<>();
-        this.playlists.put("Banana", new ArrayList<>());
         this.validFileTypes = new ArrayList<>();
         this.changesMade = false;
 
@@ -56,17 +56,28 @@ public class FileManager {
      * @return true if file was read successfully, false otherwise
      */
     public boolean setFile(File file) {
+        //Clear the media list and playlists of the previously loaded media file
+        media.clear();
+        playlists.clear();
         try {
             //If file doesn't exist then new file is being made and there is nothing to read from
-            if (!file.exists()) file.createNewFile(); //If file doesn't exist it needs to be created
+            if (!file.exists()) {
+                file.createNewFile(); //If file doesn't exist it needs to be created
+
+                //Set the preference to the most recently opened file
+                Preferences prefs = Preferences.userRoot().node(this.getClass().getName());
+                prefs.put("libraryDir", file.getAbsolutePath());
+
+                //Set the currently managed file to the one just read from and return true to show success
+                this.file = file;
+                this.changesMade = false;
+                return true;
+            }
 
             Scanner reader = new Scanner(file);
             //If this heading isn't in the file then it's not a valid media library file
             if (!reader.nextLine().equals("[MediaLibraryOrganiserFile]")) return false;
 
-            //Clear the media list and playlists of the previously loaded media file
-            media.clear();
-            playlists.clear();
             while (reader.hasNextLine()) {
                 //Each line contains info for a new piece of media
                 //stored as fileDir, playlist1, playlist2...
@@ -82,7 +93,13 @@ public class FileManager {
                 //if entry is more than 1 element it is in playlists too
                 if (mediaInfo.length > 1) {
                     for (int i = 1; i < mediaInfo.length; i++) {
-                        this.playlists.get(mediaInfo[i]).add(media);
+                        List<MediaItem> playlist = this.playlists.get(mediaInfo[i]);
+                        if (playlist != null) playlist.add(media);
+                        else {
+                            playlist = new ArrayList<>();
+                            playlist.add(media);
+                            this.playlists.put(mediaInfo[i], playlist);
+                        }
                     }
                 }
             }
@@ -97,6 +114,8 @@ public class FileManager {
             return true;
         } catch (Exception e) {
             //Something went wrong so return false so error can be displayed
+            System.out.println(e);
+            e.printStackTrace();
             return false;
         }
 
@@ -129,8 +148,11 @@ public class FileManager {
         //Using builder since string will continue to get more strings added on
         StringBuilder builder = new StringBuilder("[MediaLibraryOrganiserFile]\n");
         for (MediaItem item : this.media) {
-            //For each media item add it using the toString custom method then make a new line for the next item
-            builder.append(item.toString());
+            List<String> playlists = this.getMediasPlaylists(item);
+            builder.append(item.getName());
+            if (playlists.size() > 0) {
+                builder.append(",").append(String.join(",", playlists));
+            }
             builder.append("\n");
         }
 
@@ -159,9 +181,9 @@ public class FileManager {
      * Delete a playlist and stop managing it, will not delete the media inside it.
      * @param name Playlist name to remove
      */
-    public void removePlaylist(String name) {
+    public List<MediaItem> removePlaylist(String name) {
         this.changesMade = true;
-        this.playlists.remove(name);
+         return this.playlists.remove(name);
     }
 
     /**
@@ -197,7 +219,7 @@ public class FileManager {
     public boolean isValidFile(String dir) {
         //Get the file extension first
         String fileType = dir.substring(dir.length() - 3).toLowerCase();
-        //check if its a valid type
+        //check if it is a valid type
         return validFileTypes.contains(fileType);
     }
 
@@ -211,5 +233,12 @@ public class FileManager {
 
     public String[] getPlaylistNames() {
         return this.playlists.keySet().toArray(new String[0]);
+    }
+
+    public List<String> getMediasPlaylists(MediaItem item) {
+        return this.playlists.keySet()
+                .stream()
+                .filter(k -> this.playlists.get(k).contains(item))
+                .collect(Collectors.toList());
     }
 }

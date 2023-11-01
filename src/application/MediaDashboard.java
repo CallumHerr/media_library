@@ -1,6 +1,6 @@
 package application;
 
-import application.listeners.ButtonHandler;
+import application.listeners.DashboardHandler;
 import application.listeners.MenuHandler;
 import util.FileManager;
 import util.MediaItem;
@@ -22,7 +22,7 @@ public class MediaDashboard extends UserInterface {
         this.playlistsLoaded = 0;
 
         //Create action listeners for interactable elements
-        ButtonHandler btnHandler = new ButtonHandler(this);
+        DashboardHandler btnHandler = new DashboardHandler(this);
         MenuHandler menuHandler = new MenuHandler(this);
 
         //Declaring and initialising the different menu elements
@@ -33,7 +33,7 @@ public class MediaDashboard extends UserInterface {
         JMenu playlistMenu = new JMenu("Playlists");
         JMenuItem playlistNew = new JMenuItem("New playlist");
         JMenuItem playlistEdit = new JMenuItem("Edit playlist");
-        playlistMenu.addSeparator();
+        JMenuItem playlistClose = new JMenuItem("Close playlist");
 
         //Attaching the menu elements to the frame.
         fileMenu.add(fileOpen);
@@ -41,10 +41,10 @@ public class MediaDashboard extends UserInterface {
         menuBar.add(fileMenu);
         playlistMenu.add(playlistNew);
         playlistMenu.add(playlistEdit);
+        playlistMenu.add(playlistClose);
         playlistMenu.addSeparator();
         menuBar.add(playlistMenu);
         this.getFrame().setJMenuBar(menuBar);
-        this.genPlaylists(); //Generates the menu buttons for each of the playlists
 
         //Declare and initialise toolbar and buttons
         JToolBar toolBar = new JToolBar();
@@ -62,7 +62,7 @@ public class MediaDashboard extends UserInterface {
         toolBar.setFloatable(false); //Stops toolbar from being dragged
 
         JScrollPane scrollPane = new JScrollPane();
-        scrollPane.add(this.table = new JTable());
+        scrollPane.setViewportView(this.table = new JTable());
         this.getContentPane().add(scrollPane);
         this.populateTable(); //Fill the table with any media currently saved
 
@@ -77,9 +77,11 @@ public class MediaDashboard extends UserInterface {
         fileOpen.addActionListener(menuHandler);
         playlistNew.addActionListener(menuHandler);
         playlistEdit.addActionListener(menuHandler);
+        playlistClose.addActionListener(menuHandler);
+        this.genPlaylists();
 
         //Set the frames properties and make it visible
-        this.buildGUI("Media Library Organiser");
+        this.buildGUI("Media Library Organiser", true);
         this.getFrame().setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         this.getFrame().addWindowListener(new WindowListener(this.getFileMan()));
     }
@@ -96,17 +98,17 @@ public class MediaDashboard extends UserInterface {
      * @param playlist name of the playlist to populate the table with, if no playlist chosen then "none"
      */
     public void populateTable(String playlist) {
-        if (playlist.equals("none")) {
-            List<MediaItem> media = this.getFileMan().getMedia();
+        List<MediaItem> media;
+        if (playlist.equals("none")) media = this.getFileMan().getMedia();
+        else media = this.getFileMan().getPlaylist(playlist);
 
-            Object[] columnNames = { "Name", "Size (MB)", "Media type", "Resolution", "Recording Length" };
-            DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
-            for (MediaItem item : media) {
-                tableModel.addRow(item.getEntry());
-            }
-
-            this.table.setModel(tableModel);
+        Object[] columnNames = { "Name", "Size (MB)", "Media type", "Resolution", "Recording Length" };
+        DefaultTableModel tableModel = new DefaultTableModel(columnNames, 0);
+        for (MediaItem item : media) {
+            tableModel.addRow(item.getEntry());
         }
+
+        this.table.setModel(tableModel);
     }
 
     public void genPlaylists() {
@@ -115,8 +117,8 @@ public class MediaDashboard extends UserInterface {
         JMenuItem menuItem = (JMenuItem) menu.getMenuComponent(0);
         MenuHandler menuHandler = (MenuHandler) menuItem.getActionListeners()[0];
 
-        for (int i = 2; i < this.playlistsLoaded + 2; i++) {
-            menu.remove(i);
+        for (int i = 0; i < this.playlistsLoaded; i++) {
+            menu.remove(4);
         }
         this.playlistsLoaded = 0;
 

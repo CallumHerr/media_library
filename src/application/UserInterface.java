@@ -18,9 +18,10 @@ public abstract class UserInterface {
         this.frame.setContentPane(panel);
     }
 
-    public void buildGUI(String title) {
+    public void buildGUI(String title, boolean visible) {
         this.frame.setTitle(title);
         this.frame.setSize(600, 600);
+        this.frame.setVisible(visible);
     }
 
     public JFrame getFrame() {
