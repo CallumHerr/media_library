@@ -50,7 +50,7 @@ public class MenuHandler extends Handler {
      * Will let the user pick a new Media Library File to open and manage
      */
     private void openFile() {
-        //Get dashboard and filemanager as they are commonly used
+        //Get Dashboard and FileManager as they are commonly used
         MediaDashboard dashboard = (MediaDashboard) this.getUI();
         FileManager fileMan = dashboard.getFileMan();
         //If there's already a file and changes have been made then ask if they would like to save their changes
@@ -112,7 +112,7 @@ public class MenuHandler extends Handler {
         //Get the dashboard and fileman due to frequent use
         MediaDashboard dashboard = (MediaDashboard) this.getUI();
         FileManager fileMan = dashboard.getFileMan();
-        //If a file was already open and changes were made during the sesion ask the user if they want to save.
+        //If a file was already open and changes were made during the session ask the user if they want to save.
         if (fileMan.hasFile() && fileMan.changesMade()) {
             int choice = JOptionPane.showOptionDialog(dashboard.getFrame(),
                     "Would you like to save any changes to the current file?",
@@ -158,26 +158,24 @@ public class MenuHandler extends Handler {
                         "This file already exists, are you sure you want to replace it?",
                         "File already exists", JOptionPane.YES_NO_OPTION,
                         JOptionPane.QUESTION_MESSAGE, null, null, null);
-                if (replaceChoice == JOptionPane.YES_OPTION) {
-                    try {
-                        //Create a file writer to write heading to the csv file
-                        FileWriter writer = new FileWriter(fileChooser.getSelectedFile());
-                        //Heading allowing the file manager to quickly see that the given file is for the media organiser
-                        writer.write("[MediaLibraryOrganiserFile]\n");
-                        writer.close();
-                        fileSelected = true; //Set file selected true so it won't loop again
-                    } catch (Exception e) {
-                        //If something went wrong display an error and end the loop and function with a return.
-                        JOptionPane.showMessageDialog(dashboard.getFrame(),
-                                "Sorry, something went wrong when overwriting this file.",
-                                "Save failed", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                }
+                if (replaceChoice != JOptionPane.YES_OPTION) continue; //If no then let them pick a new file
             }
             fileSelected = true; //At this point a file has been selected so end the loop
         }
 
+        try {
+            //Create a file writer to write heading to the csv file
+            FileWriter writer = new FileWriter(fileChooser.getSelectedFile());
+            //Heading allowing the file manager to quickly see that the given file is for the media organiser
+            writer.write("[MediaLibraryOrganiserFile]\n");
+            writer.close();
+        } catch (Exception e) {
+            //If something went wrong display an error and end the function with a return
+            JOptionPane.showMessageDialog(dashboard.getFrame(),
+                    "Sorry, something went wrong when overwriting this file.",
+                    "Save failed", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
         //Attempt to set the file in file manager
         boolean success = fileMan.setFile(fileChooser.getSelectedFile());
@@ -194,20 +192,25 @@ public class MenuHandler extends Handler {
     }
 
     /**
-     * 
+     * Function ran when the new playlist button is clicked.
+     * Will prompt the user to give a name for the new playlist then open an editor for a playlist with
+     * that name.
      */
     private void newPlaylist() {
+        //Create a panel to be used for the name prompt
         JPanel panel = new JPanel();
         panel.add(new JLabel("Enter name for the playlist: "));
         JTextField textField = new JTextField(16);
         panel.add(textField);
 
+        //Display panel, if user does anything but press ok then cancel the function with return.
         int choice = JOptionPane.showConfirmDialog(this.getUI().getFrame(),
                 panel,
                 "Playlist name",
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (choice != JOptionPane.OK_OPTION) return;
 
+        //If the name is an invalid length then display an error and don't create the playlist
         String name = textField.getText();
         if (name.length() < 1 || name.length() > 16) {
             JOptionPane.showMessageDialog(this.getUI().getFrame(),
@@ -216,10 +219,16 @@ public class MenuHandler extends Handler {
             return;
         }
 
+        //Name is valid so open the editor for the playlist
         this.playlistEditor.open(name);
     }
 
+    /**
+     * Function ran when the edit playlist menu item is clicked.
+     * Will open a panel with a drop-down to select playlist to edit and open an editor frame
+     */
     private void editPlaylist() {
+        //If there are no playlists display an error and return
         MediaDashboard dashboard = (MediaDashboard) this.getUI();
         if (dashboard.getFileMan().getPlaylistNames().length < 1) {
             JOptionPane.showMessageDialog(dashboard.getFrame(),
@@ -229,24 +238,34 @@ public class MenuHandler extends Handler {
             return;
         }
 
+        //Create a panel with a combo-box to let the user to pick the playlist they would like to edit
         JPanel panel = new JPanel();
         panel.add(new JLabel("Select a playlist:"));
         DefaultComboBoxModel<String> boxModel = new DefaultComboBoxModel<>();
         for (String playlist : dashboard.getFileMan().getPlaylistNames()) {
-            boxModel.addElement(playlist);
+            boxModel.addElement(playlist); //Add each registered playlist to the combo box.
         }
         JComboBox<String> comboBox = new JComboBox<>(boxModel);
         panel.add(comboBox);
 
+        //If the user does not select a playlist then return and do nothing.
         int result = JOptionPane.showConfirmDialog(dashboard.getFrame(),
                 panel, "Playlist editor",
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (result != JOptionPane.OK_OPTION) return;
 
+        //Open the playlist editor with the selected playlist
         this.playlistEditor.open(comboBox.getSelectedItem().toString());
     }
 
+    /**
+     * Function ran when a playlist menu item is clicked.
+     * Loads the chosen playlist into the media JTable
+     * @param playlistName name of the playlist to open
+     */
     private void openPlaylist(String playlistName) {
+        //If the playlist couldn't be found then the playlist menu is outdated
+        //Displays an error and regenerates the playlist menu
         MediaDashboard dashboard = (MediaDashboard) this.getUI();
         List<MediaItem> playlist = dashboard.getFileMan().getPlaylist(playlistName);
         if (playlist == null) {
@@ -256,6 +275,6 @@ public class MenuHandler extends Handler {
             dashboard.genPlaylists();
             return;
         }
-        dashboard.populateTable(playlistName);
+        dashboard.populateTable(playlistName); //Fill the media table with the playlists media
     }
 }

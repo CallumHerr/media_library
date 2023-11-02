@@ -1,7 +1,7 @@
 package application;
 
 import application.listeners.MouseListener;
-import application.listeners.PlaylistHandler;
+import application.listeners.PlaylistButtonHandler;
 import util.MediaItem;
 import util.MediaTable;
 
@@ -45,15 +45,15 @@ public class PlaylistEditor extends UserInterface{
         columnNames[0] = "Other Media";
         this.mediaModel = new DefaultTableModel(columnNames, 0);
 
-        //Create the preffered dimensions of the tables so two can fit beside each other
+        //Create the preferred dimensions of the tables so two can fit beside each other
         Dimension prefSize = new Dimension(250, 400);
-        MouseListener mouseListener = new MouseListener(this);
+        MouseListener mouseListener = new MouseListener(this); //Checks for double clicks
 
-        //Create the playlist table and put it in a scrollpane so the column title is visible
+        //Create the playlist table and put it in a scroll pane so the column title is visible
         JScrollPane playlistPane = new JScrollPane();
         playlistPane.setPreferredSize(prefSize);
         MediaTable playlistTable = new MediaTable(this.playlistModel);
-        playlistTable.addMouseListener(mouseListener);
+        playlistTable.addMouseListener(mouseListener); //Makes sure to add the listener
         playlistPane.setViewportView(playlistTable);
         //Same for the media table
         JScrollPane mediaPane = new JScrollPane();
@@ -62,10 +62,7 @@ public class PlaylistEditor extends UserInterface{
         mediaTable.addMouseListener(mouseListener);
         mediaPane.setViewportView(mediaTable);
 
-        //Create a button that will allow swapping media from one table to another
-        JButton swapBtn = new JButton("Swap media");
-
-        //Add the scroll panes and button to a panel for formatting
+        //Add the scroll panes to a panel for formatting
         JPanel tablePanel = new JPanel();
         tablePanel.add(playlistPane);
         tablePanel.add(mediaPane);
@@ -77,8 +74,9 @@ public class PlaylistEditor extends UserInterface{
         savePanel.add(delBtn);
         savePanel.add(saveBtn);
 
-        //Create a button handler for this ui and give the buttons it as an action listener
-        PlaylistHandler buttonHandler = new PlaylistHandler(this);
+        //Create a button handler for this GUI
+        PlaylistButtonHandler buttonHandler = new PlaylistButtonHandler(this);
+        //Add the button handler to each of the buttons
         delBtn.addActionListener(buttonHandler);
         saveBtn.addActionListener(buttonHandler);
 
@@ -89,16 +87,18 @@ public class PlaylistEditor extends UserInterface{
 
         //Sets the frames properties so the frame is ready to be used
         this.buildGUI("Playlist editor", false);
+        //Just hide the JFrame so we don't need to make a new one each time the window is opened.
         this.getFrame().setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
     }
 
     /**
-     * Opens the GUI while also resetting any properties that may need changing to accomodate for opening a new playlist
+     * Opens the GUI while also resetting any properties that may need changing to accommodate for opening a new playlist
      * @param playlistName the playlist being opened name
      */
     public void open(String playlistName) {
-        this.playlistKey = playlistName;
+        this.playlistKey = playlistName; //Set the current playlist key as the initial playlist name
 
+        //Get the playlist specified, if it doesn't exist then make a new list for the media
         List<MediaItem> playlist = this.getFileMan().getPlaylist(playlistName);
         if (playlist == null) this.playlistMedia = new ArrayList<>();
         else this.playlistMedia = new ArrayList<>(this.getFileMan().getPlaylist(playlistName));
@@ -107,19 +107,27 @@ public class PlaylistEditor extends UserInterface{
         this.otherMedia = new ArrayList<>(this.getFileMan().getMedia());
         this.otherMedia.removeIf(s -> playlistMedia.contains(s));
 
+        //Set the name field to start filled with the current playlists name
         this.nameField.setText(playlistName);
 
+        //Fill the tables with the appropriate media items
         this.populateTables();
         this.getFrame().setVisible(true); //Make the frame visible
     }
 
+    /**
+     * Fill the tables with the correct items so the items can be moved
+     */
     public void populateTables() {
+        //Empty the current tables to avoid repeating data
         this.playlistModel.setRowCount(0);
         this.mediaModel.setRowCount(0);
 
+        //For each playlist item add the items name to the playlist table
         for (MediaItem item : this.playlistMedia) {
             this.playlistModel.addRow(new String[]{ item.getName() });
         }
+        //For each item not in the playlist add the items name to the other table
         for (MediaItem item : this.otherMedia) {
             this.mediaModel.addRow(new String[]{ item.getName() });
         }
@@ -129,31 +137,40 @@ public class PlaylistEditor extends UserInterface{
      * Function allowing the editor to be closed while updating the dashboard
      */
     public void close() {
+        //Update the playlist names and add any new playlists
         dashboard.genPlaylists();
-        dashboard.populateTable();
-        this.getFrame().setVisible(false);
+        dashboard.populateTable(); //Update the media dashboard to show all media again
+        this.getFrame().setVisible(false); //Hide the editor frame
     }
 
     /**
-     * Gets the current playlist name as is stored in the filemanagers hashmap
+     * Gets the current playlist name as is stored in the FileManagers hashmap
      * @return the playlist name as a string
      */
     public String getPlaylistKey() {
         return this.playlistKey;
     }
 
+    /**
+     * Sets the playlist key property of the class to an updated version of the playlist name
+     * @param playlistKey the string used as the key to the playlist in the hashmap
+     */
     public void setPlaylistKey(String playlistKey) {
         this.playlistKey = playlistKey;
     }
 
     /**
-     * Gets the current media that is being displayed as beloning to the playlist
-     * @return
+     * Gets the current media that is being displayed as belonging to the playlist
+     * @return the media items from the playlist table
      */
     public List<MediaItem> getPlaylistMedia() {
         return this.playlistMedia;
     }
 
+    /**
+     * Gets the media items that are not a part of the current playlist
+     * @return all the media items that are not currently in use by the playlist
+     */
     public List<MediaItem> getOtherMedia() {
         return this.otherMedia;
     }

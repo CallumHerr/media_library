@@ -11,13 +11,13 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.List;
 
-public class DashboardHandler extends Handler {
+public class DashboardButtonHandler extends Handler {
 
     /**
      * Save the dashboard and file manager for easy use on button presses
      * @param ui the MediaDashboard currently open
      */
-    public DashboardHandler(MediaDashboard ui) {
+    public DashboardButtonHandler(MediaDashboard ui) {
         super(ui);
     }
 
@@ -58,7 +58,7 @@ public class DashboardHandler extends Handler {
                 "jpg",
                 "png",
                 "jpeg",
-                "mp3",
+                "wav",
                 "mp4"
         ));
 

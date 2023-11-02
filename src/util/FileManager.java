@@ -26,7 +26,7 @@ public class FileManager {
         this.changesMade = false;
 
         //Add all the currently supported file types to the list
-        validFileTypes.add("mp3");
+        validFileTypes.add("wav");
         validFileTypes.add("mp4");
         validFileTypes.add("png");
         validFileTypes.add("jpg");
@@ -60,21 +60,7 @@ public class FileManager {
         media.clear();
         playlists.clear();
         try {
-            //If file doesn't exist then new file is being made and there is nothing to read from
-            if (!file.exists()) {
-                file.createNewFile(); //If file doesn't exist it needs to be created
-
-                //Set the preference to the most recently opened file
-                Preferences prefs = Preferences.userRoot().node(this.getClass().getName());
-                prefs.put("libraryDir", file.getAbsolutePath());
-
-                //Set the currently managed file to the one just read from and return true to show success
-                this.file = file;
-                this.changesMade = false;
-                return true;
-            }
-
-            Scanner reader = new Scanner(file);
+            Scanner reader = new Scanner(file); //Create a scanner for the file
             //If this heading isn't in the file then it's not a valid media library file
             if (!reader.nextLine().equals("[MediaLibraryOrganiserFile]")) return false;
 
@@ -93,9 +79,11 @@ public class FileManager {
                 //if entry is more than 1 element it is in playlists too
                 if (mediaInfo.length > 1) {
                     for (int i = 1; i < mediaInfo.length; i++) {
+                        //Check if the playlist already exists
                         List<MediaItem> playlist = this.playlists.get(mediaInfo[i]);
-                        if (playlist != null) playlist.add(media);
+                        if (playlist != null) playlist.add(media); //It exists so just add the media item to the list
                         else {
+                            //Playlist doesn't exist yet so make a new list with the media item and create the playlist
                             playlist = new ArrayList<>();
                             playlist.add(media);
                             this.playlists.put(mediaInfo[i], playlist);
@@ -114,8 +102,6 @@ public class FileManager {
             return true;
         } catch (Exception e) {
             //Something went wrong so return false so error can be displayed
-            System.out.println(e);
-            e.printStackTrace();
             return false;
         }
 
@@ -126,7 +112,7 @@ public class FileManager {
      * @param dir Directory of the new media file to manage
      */
     public void addMedia(String dir) {
-        this.changesMade = true;
+        this.changesMade = true; //Mark that changes have been made for a later save prompt
         MediaItem newItem = new MediaItem(new String[]{dir});
         this.media.add(newItem);
     }
@@ -136,7 +122,7 @@ public class FileManager {
      * @param index index of the media item to be removed
      */
     public void delMedia(int index) {
-        this.changesMade = true;
+        this.changesMade = true; //Update changes made for the save prompt
         this.media.remove(index);
     }
 
@@ -148,12 +134,14 @@ public class FileManager {
         //Using builder since string will continue to get more strings added on
         StringBuilder builder = new StringBuilder("[MediaLibraryOrganiserFile]\n");
         for (MediaItem item : this.media) {
+            //Get all playlists containing the item
             List<String> playlists = this.getMediasPlaylists(item);
-            builder.append(item.getName());
+            //Add its name to the builder followed by all the playlists it is in
+            builder.append(item.getPath());
             if (playlists.size() > 0) {
                 builder.append(",").append(String.join(",", playlists));
             }
-            builder.append("\n");
+            builder.append("\n"); //End line with \n so the next items entry will be on a new line
         }
 
         try {
@@ -173,7 +161,7 @@ public class FileManager {
      * @param media List of MediaItem that the playlist contains
      */
     public void addPlaylist(String name, List<MediaItem> media) {
-        this.changesMade = true;
+        this.changesMade = true; //New playlist added so update changes made
         this.playlists.put(name, media);
     }
 
@@ -182,7 +170,7 @@ public class FileManager {
      * @param name Playlist name to remove
      */
     public List<MediaItem> removePlaylist(String name) {
-        this.changesMade = true;
+        this.changesMade = true; //Playlist removed so update changes made
          return this.playlists.remove(name);
     }
 
@@ -231,14 +219,23 @@ public class FileManager {
         return this.changesMade;
     }
 
+    /**
+     * Gets a complete list of all the keys to the Playlists hashmap
+     * @return All the playlist names currently stored
+     */
     public String[] getPlaylistNames() {
         return this.playlists.keySet().toArray(new String[0]);
     }
 
+    /**
+     * Gets all the playlists that contain a given MediaItem
+     * @param item the MediaItem to get the playlists for
+     * @return A list of strings containing the names of all the playlists that contain the item
+     */
     public List<String> getMediasPlaylists(MediaItem item) {
         return this.playlists.keySet()
-                .stream()
-                .filter(k -> this.playlists.get(k).contains(item))
-                .collect(Collectors.toList());
+                .stream() //Turn the key set into a stream so it can be filtered
+                .filter(k -> this.playlists.get(k).contains(item)) //Filter the playlists to ones that cointain the item
+                .collect(Collectors.toList()); //Convert the stream to a list
     }
 }
