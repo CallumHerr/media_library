@@ -11,7 +11,7 @@ public class MediaTable extends JTable {
 
     /**
      * If a DefaultTableModel is provided then pass it into the super
-     * @param model
+     * @param model DefaultTableModel to use in construction
      */
     public MediaTable(DefaultTableModel model) {
         super(model);

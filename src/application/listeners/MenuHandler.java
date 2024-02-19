@@ -238,7 +238,7 @@ public class MenuHandler extends Handler {
             return;
         }
 
-        //Create a panel with a combo-box to let the user to pick the playlist they would like to edit
+        //Create a panel with a combo-box to let the user pick the playlist they would like to edit
         JPanel panel = new JPanel();
         panel.add(new JLabel("Select a playlist:"));
         DefaultComboBoxModel<String> boxModel = new DefaultComboBoxModel<>();

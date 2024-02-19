@@ -71,7 +71,7 @@ public class DashboardButtonHandler extends Handler {
 
         //If invalid file type then display error message and don't attempt to add media
         String dir = fileChooser.getSelectedFile().getAbsolutePath();
-        if (!dashboard.getFileMan().isValidFile(dir)) {
+        if (dashboard.getFileMan().nonValidFile(dir)) {
             JOptionPane.showMessageDialog(dashboard.getFrame(),
                     "Sorry, that file isn't supported.",
                     "Invalid file", JOptionPane.ERROR_MESSAGE);
@@ -150,7 +150,7 @@ public class DashboardButtonHandler extends Handler {
         if (dirList != null) {
             //For each file check if it is a valid file type, if not the move to next item
             for (String fileName : dir.list()) {
-                if (!fileMan.isValidFile(fileName)) continue;
+                if (fileMan.nonValidFile(fileName)) continue;
 
                 //File type is valid so increase file counter and add the file to the file manager
                 newFiles++;

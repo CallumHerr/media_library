@@ -4,7 +4,6 @@ import util.FileManager;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
 
 public abstract class UserInterface {
     private final JFrame frame; //The frame the UI is built on

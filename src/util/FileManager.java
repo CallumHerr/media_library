@@ -71,7 +71,7 @@ public class FileManager {
                 String fDir = mediaInfo[0];
 
                 //if it is not a supported file type then move onto the next file
-                if (!this.isValidFile(fDir)) continue;
+                if (this.nonValidFile(fDir)) continue;
 
                 //Create the media item and add it to the media list
                 MediaItem media = new MediaItem(mediaInfo);
@@ -169,9 +169,9 @@ public class FileManager {
      * Delete a playlist and stop managing it, will not delete the media inside it.
      * @param name Playlist name to remove
      */
-    public List<MediaItem> removePlaylist(String name) {
+    public void removePlaylist(String name) {
         this.changesMade = true; //Playlist removed so update changes made
-         return this.playlists.remove(name);
+         this.playlists.remove(name);
     }
 
     /**
@@ -202,13 +202,13 @@ public class FileManager {
     /**
      * checks if the given dir is a supported file type
      * @param dir the file to check type of
-     * @return true if the file type is supported, false otherwise
+     * @return true if it isn't supported, false if supported
      */
-    public boolean isValidFile(String dir) {
+    public boolean nonValidFile(String dir) {
         //Get the file extension first
         String fileType = dir.substring(dir.length() - 3).toLowerCase();
         //check if it is a valid type
-        return validFileTypes.contains(fileType);
+        return !validFileTypes.contains(fileType);
     }
 
     /**
@@ -234,8 +234,8 @@ public class FileManager {
      */
     public List<String> getMediasPlaylists(MediaItem item) {
         return this.playlists.keySet()
-                .stream() //Turn the key set into a stream so it can be filtered
-                .filter(k -> this.playlists.get(k).contains(item)) //Filter the playlists to ones that cointain the item
+                .stream() //Turn the key set into a stream, so it can be filtered
+                .filter(k -> this.playlists.get(k).contains(item)) //Filter the playlists to ones that contain the item
                 .collect(Collectors.toList()); //Convert the stream to a list
     }
 }
